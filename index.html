@@ -352,6 +352,11 @@ body{background:var(--bg);overflow-x:hidden}
   transition:border-color .25s,transform .25s,color .25s;
 }
 #sound-toggle:hover{border-color:var(--acc);color:#fff;transform:translateY(-2px)}
+#sound-toggle.hint{animation:soundHint 2.2s ease-in-out infinite}
+@keyframes soundHint{
+  0%,100%{box-shadow:0 6px 24px rgba(0,0,0,.5),0 0 0 0 rgba(123,110,255,0)}
+  50%{box-shadow:0 6px 24px rgba(0,0,0,.5),0 0 0 7px rgba(123,110,255,.18);border-color:rgba(123,110,255,.65)}
+}
 #sound-toggle .eq{display:flex;align-items:flex-end;gap:2px;height:14px}
 #sound-toggle .eq i{width:3px;height:4px;border-radius:2px;background:var(--ac2)}
 #sound-toggle.playing .eq i{animation:eq .85s ease-in-out infinite}
@@ -390,9 +395,9 @@ body{background:var(--bg);overflow-x:hidden}
 
 <!-- Background score -->
 <audio id="bgm" src="aybee-theme.mp3" loop preload="auto"></audio>
-<button id="sound-toggle" aria-label="Toggle sound">
+<button id="sound-toggle" class="hint" aria-label="Toggle sound">
   <span class="eq"><i></i><i></i><i></i><i></i></span>
-  <span class="sound-label">Sound off</span>
+  <span class="sound-label">Play sound</span>
 </button>
 
 <!-- Social Rail (right side) -->
@@ -476,7 +481,7 @@ body{background:var(--bg);overflow-x:hidden}
 
       <div class="ibox rv" style="transition-delay:.44s">
         <div class="ibox-ey">Why both matter</div>
-        <div class="ibox-t">Testing serves brands that already invest in audio. Creation opens the door to <strong>every brand that doesn't</strong> — the vast majority of the market. Together they add a creative-production line to Aybee's testing platform & create a full-funnel audio product.</div>
+        <div class="ibox-t">Testing serves brands that already invest in audio. Creation opens the door to <strong>every brand that doesn't</strong>, the vast majority of the market. Together they add a creative-production line to Aybee's testing platform & create a full-funnel audio product.</div>
       </div>
     </div>
   </section>
@@ -528,7 +533,7 @@ body{background:var(--bg);overflow-x:hidden}
           <div class="chart-title">Portfolio impact</div>
           <div class="chart-h">Aybee's first creative-production line</div>
 
-          <div style="font-size:.68rem;color:rgba(255,255,255,.4);margin-bottom:6px">Today — a pure testing platform</div>
+          <div style="font-size:.68rem;color:rgba(255,255,255,.4);margin-bottom:6px">Today a pure testing platform</div>
           <div class="stacked-bar">
             <div class="sb-seg creative" data-width="0" style="width:0%"></div>
             <div class="sb-seg analysis" data-width="100" style="width:0%"></div>
@@ -550,6 +555,7 @@ body{background:var(--bg);overflow-x:hidden}
             <div class="sb-legend-item"><div class="sb-legend-dot" style="background:var(--acc)"></div>Creative production (new)</div>
             <div class="sb-legend-item"><div class="sb-legend-dot" style="background:rgba(96,165,250,.5)"></div>Testing &amp; analysis</div>
           </div>
+          <div style="margin-top:12px;font-size:.65rem;opacity:.45;letter-spacing:.12em;text-transform:uppercase">Illustrative</div>
         </div>
 
         <!-- Graph 2: Brands without audio -->
@@ -584,7 +590,7 @@ body{background:var(--bg);overflow-x:hidden}
 
       <div class="ibox rv" style="transition-delay:.35s">
         <div class="ibox-ey">What this means</div>
-        <div class="ibox-t">Audio creation with AI adds Aybee's first creative-production line — and <strong>unlocks the vast majority of brands</strong> that have no audio strategy today. That's a market nobody is serving.</div>
+        <div class="ibox-t">Audio creation with AI adds Aybee's first creative-production line and <strong>unlocks the vast majority of brands</strong> that have no audio strategy today. That's a market nobody is serving.</div>
       </div>
     </div>
   </section>
@@ -727,7 +733,7 @@ body{background:var(--bg);overflow-x:hidden}
   const PIX = Math.min(devicePixelRatio,2);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(62, W()/H(), 0.1, 1000);
-  camera.position.set(0,0,18);
+  camera.position.set(0,0,14);
 
   /* ---------- Wormhole tunnel (camera flies down the axis) ---------- */
   const COUNT=62000;
@@ -741,7 +747,7 @@ body{background:var(--bg);overflow-x:hidden}
   const gP=new Float32Array(COUNT*3), gC=new Float32Array(COUNT*3), gS=new Float32Array(COUNT);
   for(let i=0;i<COUNT;i++){
     const i3=i*3;
-    const rr=Math.pow(Math.random(),0.62);             /* denser toward centre */
+    const rr=Math.pow(Math.random(),0.5);              /* spread arms toward the edges */
     const r=0.5 + rr*MAXR;
     const arm=(i%ARMS)/ARMS*Math.PI*2;
     const a=arm + r*SWIRL + (Math.random()-0.5)*1.5;   /* spiral arms + dust */
@@ -862,7 +868,7 @@ body{background:var(--bg);overflow-x:hidden}
     core.material.opacity=(1.0+audio*0.3)*(1-sp*0.85);
 
     /* wormhole recedes + fades as you scroll (keeps content readable) */
-    camera.position.z = lv(camera.position.z, 18 + sp*14, .045);
+    camera.position.z = lv(camera.position.z, 14 + sp*13, .045);
     camera.position.x = lv(camera.position.x, m.sx*0.6, .04);
     camera.position.y = lv(camera.position.y, m.sy*0.45, .04);
     camera.lookAt(-3.5, 0, 0);
@@ -974,16 +980,11 @@ body{background:var(--bg);overflow-x:hidden}
   }
   function pause(){ audio.pause(); playing=false; update(); }
 
-  btn.addEventListener('click', ()=> playing?pause():play());
-  /* prevent the global "first gesture" from double-firing on the button */
-  ['pointerdown','touchstart'].forEach(ev=> btn.addEventListener(ev, e=> e.stopPropagation()));
-
-  function first(){
-    if(started) return; started=true; play();
-    ['pointerdown','keydown','touchstart','scroll'].forEach(ev=> window.removeEventListener(ev, first));
-  }
-  ['pointerdown','keydown','touchstart'].forEach(ev=> window.addEventListener(ev, first, {once:false}));
-  window.addEventListener('scroll', first, {passive:true});
+  /* click-to-play only — no autoplay (best for a cold send) */
+  btn.addEventListener('click', ()=>{
+    btn.classList.remove('hint');   /* drop the one-time invitation pulse */
+    playing ? pause() : play();
+  });
 
   /* exposed so the video carousel can duck the music */
   window.__bgm={ play:play, pause:pause, isPlaying:()=>playing };
@@ -1035,6 +1036,8 @@ body{background:var(--bg);overflow-x:hidden}
   document.head.appendChild(tag);
 })();
 </script>
+
+<p style="position:relative;z-index:2;max-width:640px;margin:0 auto;padding:28px 24px 40px;text-align:center;font-size:.62rem;line-height:1.7;letter-spacing:.04em;color:rgba(255,255,255,.25)">Market figures and statistics are drawn from publicly available sources and independent research. Portfolio split and projections are illustrative of directional opportunity, not audited figures.</p>
 
 </body>
 </html>
