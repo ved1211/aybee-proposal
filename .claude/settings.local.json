@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.aybee.io)",
+      "WebFetch(domain:aybee.io)",
+      "WebFetch(domain:www.aybee.ai)",
+      "mcp__Claude_Preview__preview_start",
+      "Read(//Users/ved/Downloads/**)",
+      "Bash(cp \"/Users/ved/Downloads/apalonbeats-cinematic-cinematic-music-529531.mp3\" \"/Users/ved/Downloads/github/Aybee Proposal/aybee-theme.mp3\")",
+      "WebSearch"
+    ]
+  }
+}

@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Audio Intelligence × Aybee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#05060b;
+  --acc:#7B6EFF;
+  --ac2:#A89DFF;
+  --ac3:#c4bcff;
+  --bdr:rgba(255,255,255,0.08);
+  --dim:rgba(255,255,255,0.55);
+  --faint:rgba(255,255,255,0.28);
+  --glass:rgba(8,9,18,.72);
+}
+
+html{
+  background:var(--bg);color:#fff;
+  font-family:'Inter',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  scroll-behavior:smooth;overflow-x:hidden;
+}
+body{background:var(--bg);overflow-x:hidden}
+
+/* ── Canvas ── */
+#space-canvas{
+  position:fixed;inset:0;width:100%;height:100%;
+  z-index:0;pointer-events:none;display:block;
+}
+
+/* ── Progress ── */
+#pgbar{
+  position:fixed;top:0;left:0;height:2px;width:0%;
+  background:linear-gradient(90deg,#7B6EFF,#A89DFF);
+  z-index:900;transition:width .06s linear;
+}
+
+/* ── Social Rail ── */
+#rail{
+  position:fixed;right:1.5rem;top:50%;
+  transform:translateY(-50%);z-index:100;
+  display:flex;flex-direction:column;align-items:center;
+  gap:.1rem;opacity:0;transition:opacity .7s;
+}
+#rail.show{opacity:1}
+.rl{width:1px;height:26px;background:rgba(255,255,255,.22);margin:.28rem 0}
+.ri{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.82);text-decoration:none;
+  background:rgba(18,18,30,.92);backdrop-filter:blur(10px);
+  box-shadow:0 4px 18px rgba(0,0,0,.45);
+  transition:border-color .25s,color .25s,transform .25s,background .25s;
+}
+.ri:hover{border-color:var(--acc);color:#fff;background:rgba(123,110,255,.4);transform:scale(1.12)}
+.ri svg{width:14px;height:14px;fill:currentColor}
+@media(max-width:768px){#rail{display:none}}
+
+/* ── Page ── */
+#page{position:relative;z-index:2}
+
+/* ── Section ── */
+.sec{
+  position:relative;min-height:100svh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:0 clamp(24px,8vw,100px);overflow:hidden;
+}
+.sec::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(108deg,
+    rgba(5,6,11,.95) 0%,rgba(5,6,11,.88) 30%,
+    rgba(5,6,11,.55) 60%,rgba(5,6,11,.15) 85%);
+}
+
+.inner{position:relative;z-index:1;max-width:680px}
+.inner.wide{max-width:1060px}
+.inner.ctr{max-width:760px;margin:0 auto;text-align:center}
+
+.divider{height:1px;background:var(--bdr);margin:0 clamp(24px,8vw,100px)}
+
+/* ── Typography ── */
+.eyebrow{
+  display:block;font-size:clamp(.56rem,.8vw,.66rem);font-weight:600;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ac2);margin-bottom:1.3rem;
+}
+.h1{
+  font-size:clamp(2.8rem,6.5vw,6rem);font-weight:700;
+  line-height:1.04;letter-spacing:-.032em;color:#fff;margin-bottom:1.4rem;
+}
+.h1 em{font-style:normal;color:var(--ac2)}
+.h2{
+  font-size:clamp(1.9rem,4.2vw,3.6rem);font-weight:700;
+  line-height:1.08;letter-spacing:-.026em;color:#fff;margin-bottom:1rem;
+}
+.h2 em{font-style:normal;color:var(--ac2)}
+.body{
+  font-size:clamp(.95rem,1.4vw,1.1rem);font-weight:400;
+  color:rgba(255,255,255,.68);line-height:1.7;max-width:540px;
+}
+
+/* ── Stats ── */
+.stats{display:flex;gap:3rem;flex-wrap:wrap;margin-top:2.6rem}
+.st-n{font-size:clamp(1.8rem,3vw,2.5rem);font-weight:300;color:#fff;letter-spacing:-.02em}
+.st-n.a{color:var(--ac2)}
+.st-l{font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:4px}
+.st-sep{width:1px;background:var(--bdr);align-self:stretch}
+
+/* ── Scroll Cue ── */
+.scue{
+  position:absolute;bottom:2.4rem;left:clamp(24px,8vw,100px);z-index:1;
+  display:flex;align-items:center;gap:.8rem;
+  font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.22);
+}
+.scue-ln{width:44px;height:1px;background:rgba(255,255,255,.18);
+  transform-origin:left;animation:lp 2.5s ease-in-out infinite}
+@keyframes lp{0%,100%{opacity:.25;transform:scaleX(1)}50%{opacity:.7;transform:scaleX(1.6)}}
+
+/* ── Glass Card ── */
+.glass{
+  background:var(--glass);border:1px solid rgba(255,255,255,.09);
+  border-radius:16px;padding:34px 30px;
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  transition:border-color .3s,transform .35s,box-shadow .35s;
+}
+.glass:hover{
+  border-color:rgba(123,110,255,.4);transform:translateY(-4px);
+  box-shadow:0 18px 48px rgba(0,0,0,.5);
+}
+
+/* ── Two Column Grid ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin-top:2.5rem}
+@media(max-width:860px){.g2{grid-template-columns:1fr;gap:1.2rem}}
+
+/* ── Pillar Cards ── */
+.pillar{
+  background:var(--glass);border:1px solid rgba(255,255,255,.09);
+  border-radius:18px;padding:36px 30px;
+  backdrop-filter:blur(20px);
+  transition:border-color .3s,transform .3s;
+}
+.pillar:hover{border-color:rgba(123,110,255,.4);transform:translateY(-4px)}
+.pillar-icon{font-size:2rem;margin-bottom:14px}
+.pillar-tag{
+  display:inline-block;font-size:.56rem;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;
+  padding:4px 10px;border-radius:4px;margin-bottom:14px;
+}
+.pillar-tag.test{color:#60A5FA;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2)}
+.pillar-tag.create{color:var(--ac2);background:rgba(123,110,255,.1);border:1px solid rgba(123,110,255,.2)}
+.pillar-title{font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:10px;line-height:1.3}
+.pillar-desc{font-size:.88rem;color:rgba(255,255,255,.55);line-height:1.65;margin-bottom:16px}
+.pillar-items{list-style:none;display:flex;flex-direction:column;gap:8px}
+.pillar-items li{
+  font-size:.82rem;color:rgba(255,255,255,.5);
+  display:flex;align-items:center;gap:8px;
+}
+.pillar-items li::before{
+  content:'';width:4px;height:4px;border-radius:50%;flex-shrink:0;
+}
+.pillar-items.test li::before{background:#60A5FA}
+.pillar-items.create li::before{background:var(--acc)}
+.pillar-contrib{
+  margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.06);
+  font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);
+}
+.pillar-contrib em{font-style:normal;color:var(--ac2)}
+
+/* ── RICE Grid ── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem;margin-top:2.5rem}
+@media(max-width:860px){.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.g4{grid-template-columns:1fr}}
+.rc-l{font-size:3rem;font-weight:300;color:var(--ac2);line-height:1;margin-bottom:9px;letter-spacing:-.03em}
+.rc-lb{font-size:.6rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:10px}
+.rc-sc{font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:8px}
+.rc-d{font-size:.88rem;color:rgba(255,255,255,.64);line-height:1.62}
+
+/* ── Chart Cards ── */
+.g2c{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin-top:2.5rem}
+@media(max-width:860px){.g2c{grid-template-columns:1fr}}
+
+.chart-card{
+  background:var(--glass);border:1px solid rgba(255,255,255,.09);
+  border-radius:16px;padding:28px 24px;backdrop-filter:blur(20px);
+  transition:border-color .3s,transform .3s;
+}
+.chart-card:hover{border-color:rgba(255,255,255,.18);transform:translateY(-3px)}
+.chart-title{font-size:.58rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:6px}
+.chart-h{font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:16px}
+
+/* Stacked bars */
+.stacked-bar{
+  width:100%;height:32px;border-radius:6px;overflow:hidden;
+  display:flex;margin-bottom:8px;background:rgba(255,255,255,.04);
+}
+.sb-seg{height:100%;transition:width 1.5s cubic-bezier(.34,1.2,.64,1)}
+.sb-seg.creative{background:linear-gradient(90deg,#7B6EFF,#A89DFF)}
+.sb-seg.analysis{background:rgba(96,165,250,.5)}
+.sb-legend{display:flex;gap:16px;margin-top:10px}
+.sb-legend-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:rgba(255,255,255,.45)}
+.sb-legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* Donut chart */
+.donut-wrap{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:8px}
+.donut-label{text-align:left}
+.donut-big{font-size:2.4rem;font-weight:300;color:var(--ac2);line-height:1}
+.donut-sub{font-size:.82rem;color:rgba(255,255,255,.66);margin-top:5px}
+
+/* ── Workflow ── */
+.wf{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:3rem;gap:0}
+.wf-nd{display:flex;align-items:center}
+.wf-b{
+  background:var(--glass);border:1px solid rgba(255,255,255,.09);
+  border-radius:14px;padding:24px 20px;text-align:center;min-width:152px;
+  backdrop-filter:blur(16px);transition:border-color .3s,transform .3s;
+}
+.wf-b:hover{border-color:rgba(123,110,255,.4);transform:translateY(-3px)}
+.wf-b.hi{border-color:rgba(123,110,255,.3);background:rgba(123,110,255,.08)}
+.wf-ic{font-size:1.7rem;margin-bottom:8px}
+.wf-lb{font-size:.83rem;font-weight:500;color:rgba(255,255,255,.8);line-height:1.45}
+.wf-ar{
+  width:28px;height:1px;flex-shrink:0;
+  background:linear-gradient(to right,rgba(123,110,255,.15),rgba(123,110,255,.6));
+  position:relative;
+}
+.wf-ar::after{
+  content:'';position:absolute;right:-1px;top:-3px;
+  border:4px solid transparent;border-left-color:var(--acc);
+}
+@media(max-width:860px){
+  .wf{flex-direction:column}
+  .wf-ar{width:1px;height:18px;background:linear-gradient(to bottom,rgba(123,110,255,.15),rgba(123,110,255,.6))}
+  .wf-ar::after{right:-3px;top:auto;bottom:-1px;border-left-color:transparent;border-top-color:var(--acc)}
+}
+
+/* ── Info Box ── */
+.ibox{
+  background:rgba(123,110,255,.06);border:1px solid rgba(123,110,255,.15);
+  border-radius:14px;padding:20px 24px;margin-top:1.8rem;
+}
+.ibox-ey{font-size:.58rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ac2);margin-bottom:6px}
+.ibox-t{font-size:.94rem;color:rgba(255,255,255,.72);line-height:1.65}
+.ibox-t strong{color:#fff}
+
+/* ── Case Study ── */
+.case-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin-top:2.5rem}
+@media(max-width:860px){.case-grid{grid-template-columns:1fr}}
+.case-stat{
+  text-align:center;padding:28px 20px;
+  background:var(--glass);border:1px solid rgba(255,255,255,.09);
+  border-radius:14px;backdrop-filter:blur(18px);
+}
+.case-num{font-size:2.6rem;font-weight:300;color:var(--ac2);letter-spacing:-.025em;line-height:1}
+.case-lbl{font-size:.78rem;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.55}
+.case-quote{
+  grid-column:1/-1;
+  background:rgba(123,110,255,.05);border:1px solid rgba(123,110,255,.14);
+  border-radius:14px;padding:24px 28px;
+}
+.case-qt{font-size:1rem;color:rgba(255,255,255,.72);line-height:1.65;font-style:italic}
+.case-src{font-size:.7rem;color:var(--ac2);margin-top:10px;font-style:normal;font-weight:600}
+
+/* ── Patent Badge ── */
+.patent-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(123,110,255,.1);border:1px solid rgba(123,110,255,.25);
+  border-radius:20px;padding:6px 14px;margin-top:14px;
+  font-size:.72rem;font-weight:600;color:var(--ac2);
+}
+
+/* ── Footer ── */
+.fq{font-size:clamp(1.8rem,3.8vw,3.4rem);font-weight:300;line-height:1.18;letter-spacing:-.025em;color:#fff;margin-bottom:.7rem}
+.fq em{font-style:normal;color:var(--ac2);font-weight:700}
+
+/* ── Scroll Reveal ── */
+.rv{opacity:0;transform:translateY(36px);filter:blur(6px);transition:opacity .95s cubic-bezier(.22,1,.36,1),transform .95s cubic-bezier(.22,1,.36,1),filter .95s ease}
+.rv.in{opacity:1;transform:none;filter:none}
+.rvl{opacity:0;transform:translateX(-28px);filter:blur(5px);transition:opacity .85s cubic-bezier(.22,1,.36,1),transform .85s cubic-bezier(.22,1,.36,1),filter .85s ease}
+.rvl.in{opacity:1;transform:none;filter:none}
+.rvr{opacity:0;transform:translateX(28px);filter:blur(5px);transition:opacity .85s cubic-bezier(.22,1,.36,1),transform .85s cubic-bezier(.22,1,.36,1),filter .85s ease}
+.rvr.in{opacity:1;transform:none;filter:none}
+.rvs{opacity:0;transform:scale(.9) translateY(22px);filter:blur(9px);transition:opacity .95s cubic-bezier(.22,1,.36,1),transform .95s cubic-bezier(.22,1,.36,1),filter .95s ease}
+.rvs.in{opacity:1;transform:none;filter:none}
+
+/* ── Intro Hero ── */
+.hero-intro{max-width:900px}
+.hero-kicker{
+  display:block;font-size:clamp(.58rem,.82vw,.7rem);font-weight:600;
+  letter-spacing:.24em;text-transform:uppercase;color:var(--ac2);
+  margin-bottom:1.6rem;opacity:0;animation:heroRise .9s .1s both;
+}
+.hero-title{
+  font-size:clamp(2.5rem,7vw,5.6rem);font-weight:800;line-height:1.04;
+  letter-spacing:-.035em;display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .28em;
+}
+.hero-title .ht-line{
+  background:linear-gradient(100deg,#fff 0%,#c4bcff 28%,#7B6EFF 50%,#c4bcff 72%,#fff 100%);
+  background-size:220% auto;-webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+  opacity:0;
+}
+.hero-title .ht-1{animation:wordInLeft 1s .9s both, shimmer 7s 1.9s linear infinite}
+.hero-title .ht-2{animation:wordInRight 1s 1.18s both, shimmer 7s 2.1s linear infinite}
+.hero-title .ht-x{
+  display:inline-block;color:var(--acc);font-weight:300;opacity:0;will-change:transform;
+  animation:xFly 1.2s cubic-bezier(.16,.84,.3,1) both, xGlow 2.6s 1.3s ease-in-out infinite;
+  text-shadow:0 0 34px rgba(123,110,255,.65);
+}
+.hero-sub{
+  font-size:clamp(1.5rem,3.4vw,2.8rem);font-weight:700;color:#fff;
+  letter-spacing:-.02em;margin-top:1.3rem;opacity:0;animation:heroRise 1s 2s both;
+}
+.hero-sub em{font-style:normal;color:var(--ac2)}
+.hero-body{
+  font-size:clamp(.98rem,1.5vw,1.15rem);color:rgba(255,255,255,.72);
+  line-height:1.7;max-width:560px;margin-top:1.3rem;
+  opacity:0;animation:heroRise 1s 1.35s both;
+}
+.hero-intro .stats{opacity:0;animation:heroRise 1s 1.6s both}
+@keyframes heroRise{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes shimmer{from{background-position:0 center}to{background-position:220% center}}
+@keyframes xFly{
+  0%{opacity:0;transform:translateX(58vw) rotate(240deg) scale(2.6)}
+  55%{opacity:1;transform:translateX(-4%) rotate(-14deg) scale(1.12)}
+  78%{transform:translateX(2%) rotate(6deg) scale(.98)}
+  100%{opacity:1;transform:translateX(0) rotate(0) scale(1)}
+}
+@keyframes xGlow{0%,100%{text-shadow:0 0 22px rgba(123,110,255,.45)}50%{text-shadow:0 0 46px rgba(123,110,255,.95)}}
+@keyframes wordInLeft{0%{opacity:0;transform:translateX(-48px);filter:blur(9px)}100%{opacity:1;transform:none;filter:none}}
+@keyframes wordInRight{0%{opacity:0;transform:translateX(38px) translateY(14px);filter:blur(9px)}100%{opacity:1;transform:none;filter:none}}
+
+/* ── Sound Toggle ── */
+#sound-toggle{
+  position:fixed;left:1.5rem;bottom:1.5rem;z-index:200;
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px 10px 13px;border-radius:30px;
+  background:rgba(18,18,30,.9);border:1px solid rgba(255,255,255,.16);
+  backdrop-filter:blur(12px);color:rgba(255,255,255,.82);
+  font-family:inherit;font-size:.72rem;font-weight:600;letter-spacing:.05em;
+  cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.5);
+  transition:border-color .25s,transform .25s,color .25s;
+}
+#sound-toggle:hover{border-color:var(--acc);color:#fff;transform:translateY(-2px)}
+#sound-toggle .eq{display:flex;align-items:flex-end;gap:2px;height:14px}
+#sound-toggle .eq i{width:3px;height:4px;border-radius:2px;background:var(--ac2)}
+#sound-toggle.playing .eq i{animation:eq .85s ease-in-out infinite}
+#sound-toggle.playing .eq i:nth-child(2){animation-delay:.22s}
+#sound-toggle.playing .eq i:nth-child(3){animation-delay:.44s}
+#sound-toggle.playing .eq i:nth-child(4){animation-delay:.12s}
+@keyframes eq{0%,100%{height:4px}50%{height:14px}}
+@media(max-width:768px){#sound-toggle{left:1rem;bottom:1rem;padding:9px 13px}}
+
+/* ── Titan layout + Carousel ── */
+.titan-top{display:grid;grid-template-columns:1.05fr .95fr;gap:2.6rem;align-items:center}
+@media(max-width:900px){.titan-top{grid-template-columns:1fr;gap:1.8rem}}
+.carousel{position:relative;border-radius:16px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.14);background:#000;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+.carousel-track{display:flex;transition:transform .55s cubic-bezier(.4,.1,.2,1)}
+.carousel-slide{min-width:100%;aspect-ratio:16/9;background:#000}
+.carousel-slide iframe{width:100%;height:100%;display:block;border:0}
+.carousel-btn{
+  position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;
+  border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(10,10,18,.72);
+  color:#fff;font-size:1.5rem;line-height:1;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;backdrop-filter:blur(8px);transition:background .25s,border-color .25s;z-index:3}
+.carousel-btn:hover{background:rgba(123,110,255,.6);border-color:var(--acc)}
+.carousel-btn.prev{left:10px}.carousel-btn.next{right:10px}
+.carousel-dots{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:3}
+.carousel-dot{width:8px;height:8px;border-radius:50%;border:0;cursor:pointer;padding:0;
+  background:rgba(255,255,255,.4);transition:background .25s,transform .25s}
+.carousel-dot.active{background:var(--ac2);transform:scale(1.3)}
+.titan-cap{font-size:.74rem;color:rgba(255,255,255,.55);margin-top:12px;text-align:center;letter-spacing:.04em}
+</style>
+</head>
+<body>
+
+<div id="pgbar"></div>
+<canvas id="space-canvas"></canvas>
+
+<!-- Background score -->
+<audio id="bgm" src="aybee-theme.mp3" loop preload="auto"></audio>
+<button id="sound-toggle" aria-label="Toggle sound">
+  <span class="eq"><i></i><i></i><i></i><i></i></span>
+  <span class="sound-label">Sound off</span>
+</button>
+
+<!-- Social Rail (right side) -->
+<nav id="rail">
+  <div class="rl"></div>
+  <a class="ri" href="mailto:vedgawade1219@gmail.com" title="Email">
+    <svg viewBox="0 0 24 24"><path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+  </a>
+  <a class="ri" href="https://linkedin.com/in/ved-gawade/" target="_blank" rel="noopener" title="LinkedIn">
+    <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+  </a>
+  <a class="ri" href="https://github.com/ved1211" target="_blank" rel="noopener" title="GitHub">
+    <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+  </a>
+  <a class="ri" href="https://ved1211.github.io/portfolio/" target="_blank" rel="noopener" title="Portfolio">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+  </a>
+  <div class="rl"></div>
+</nav>
+
+<div id="page">
+
+  <!-- ═══ 1. INTRO ═══ -->
+  <section class="sec" id="s0">
+    <div class="inner hero-intro">
+      <span class="hero-kicker">An extended product idea for Aybee</span>
+      <h1 class="hero-title">
+        <span class="ht-line ht-1">Audio Intelligence</span>
+        <span class="ht-x">×</span>
+        <span class="ht-line ht-2">Aybee</span>
+      </h1>
+      <p class="hero-sub">Own the entire <em>audio journey.</em></p>
+    </div>
+    <div class="scue rv" style="transition-delay:.2s">
+      <div class="scue-ln"></div>Scroll
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 2. TWO WAYS TO GROW AYBEE ═══ -->
+  <section class="sec" id="s1">
+    <div class="inner wide">
+      <p class="eyebrow rv">Two ways to grow Aybee</p>
+      <h2 class="h2 rv" style="transition-delay:.06s">Test audio. <em>Create audio.</em><br>Both under one roof.</h2>
+      <p class="body rv" style="transition-delay:.12s">
+        One product extension. Two revenue streams. Strengthens both sides of the business.
+      </p>
+
+      <div class="g2">
+        <!-- Testing Pillar -->
+        <div class="pillar rv" style="transition-delay:.2s">
+          <div class="pillar-icon">📊</div>
+          <div class="pillar-tag test">Strengthens analysis</div>
+          <div class="pillar-title">Audio Testing</div>
+          <div class="pillar-desc">For brands that already have music. Test which audio actually drives behaviour.</div>
+          <ul class="pillar-items test">
+            <li>A/B test ad soundtracks</li>
+            <li>Measure sonic logo impact</li>
+            <li>Compare voiceover tones</li>
+            <li>Track real clicks</li>
+          </ul>
+          <div class="pillar-contrib">Extends <em>existing testing infrastructure</em></div>
+        </div>
+
+        <!-- Creation Pillar -->
+        <div class="pillar rv" style="transition-delay:.32s">
+          <div class="pillar-icon">🎵</div>
+          <div class="pillar-tag create">Adds creative</div>
+          <div class="pillar-title">AI Audio Creation</div>
+          <div class="pillar-desc">For brands with no audio strategy. AI generates music matched to buyer emotions and product feel.</div>
+          <ul class="pillar-items create">
+            <li>AI composes brand-matched audio</li>
+            <li>Tuned to buyer emotion profiles</li>
+            <li>Replaces $1000s in music production costs</li>
+            <li>Generates, tests & optimises</li>
+          </ul>
+          <div class="pillar-contrib"><em>Proprietary Data Moat</em></div>
+        </div>
+      </div>
+
+      <div class="ibox rv" style="transition-delay:.44s">
+        <div class="ibox-ey">Why both matter</div>
+        <div class="ibox-t">Testing serves brands that already invest in audio. Creation opens the door to <strong>every brand that doesn't</strong> — the vast majority of the market. Together they add a creative-production line to Aybee's testing platform & create a full-funnel audio product.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 3. RICE FRAMEWORK ═══ -->
+  <section class="sec" id="s2">
+    <div class="inner wide">
+      <p class="eyebrow rv">Is it worth building?</p>
+      <h2 class="h2 rv" style="transition-delay:.06s">RICE says <em>yes.</em></h2>
+
+      <div class="g4">
+        <div class="glass rv" style="transition-delay:0s">
+          <div class="rc-l">R</div><div class="rc-lb">Reach</div>
+          <div class="rc-sc">~200+ brands</div>
+          <div class="rc-d">Every existing Aybee client can use audio testing immediately. AI creation opens a new client pool.</div>
+        </div>
+        <div class="glass rv" style="transition-delay:.1s">
+          <div class="rc-l">I</div><div class="rc-lb">Impact</div>
+          <div class="rc-sc">High</div>
+          <div class="rc-d">Two new revenue lines. Higher spend per client. New market vertical. A behavioural dataset that compounds with every test.</div>
+        </div>
+        <div class="glass rv" style="transition-delay:.2s">
+          <div class="rc-l">C</div><div class="rc-lb">Confidence</div>
+          <div class="rc-sc">90%</div>
+          <div class="rc-d">Testing uses existing panel infrastructure. AI audio generation is proven technology ready for vertical integration.</div>
+        </div>
+        <div class="glass rv" style="transition-delay:.3s">
+          <div class="rc-l">E</div><div class="rc-lb">Effort</div>
+          <div class="rc-sc">Medium</div>
+          <div class="rc-d">Testing: one new upload field. Creation: AI model integration. Both leverage what Aybee already has.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 4. IMPACT GRAPHS ═══ -->
+  <section class="sec" id="s3">
+    <div class="inner wide">
+      <p class="eyebrow rv">The opportunity</p>
+      <h2 class="h2 rv" style="transition-delay:.06s">The numbers behind<br><em>the opportunity.</em></h2>
+
+      <div class="g2c">
+        <!-- Graph 1: Portfolio Balance -->
+        <div class="chart-card rv" data-stacked-chart>
+          <div class="chart-title">Portfolio impact</div>
+          <div class="chart-h">Aybee's first creative-production line</div>
+
+          <div style="font-size:.68rem;color:rgba(255,255,255,.4);margin-bottom:6px">Today — a pure testing platform</div>
+          <div class="stacked-bar">
+            <div class="sb-seg creative" data-width="0" style="width:0%"></div>
+            <div class="sb-seg analysis" data-width="100" style="width:0%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.68rem;color:rgba(255,255,255,.35);margin-bottom:16px">
+            <span>Creative production 0%</span><span>Testing &amp; analysis 100%</span>
+          </div>
+
+          <div style="font-size:.68rem;color:var(--ac2);margin-bottom:6px">With Audio Intelligence <span style="opacity:.55">· illustrative</span></div>
+          <div class="stacked-bar">
+            <div class="sb-seg creative" data-width="25" style="width:0%"></div>
+            <div class="sb-seg analysis" data-width="75" style="width:0%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.68rem;color:rgba(255,255,255,.35)">
+            <span>Creative production</span><span>Testing &amp; analysis</span>
+          </div>
+
+          <div class="sb-legend">
+            <div class="sb-legend-item"><div class="sb-legend-dot" style="background:var(--acc)"></div>Creative production (new)</div>
+            <div class="sb-legend-item"><div class="sb-legend-dot" style="background:rgba(96,165,250,.5)"></div>Testing &amp; analysis</div>
+          </div>
+        </div>
+
+        <!-- Graph 2: Brands without audio -->
+        <div class="chart-card rv" style="transition-delay:.12s" data-donut-chart>
+          <div class="chart-title">Untapped market</div>
+          <div class="chart-h">Brands without any audio strategy</div>
+
+          <div class="donut-wrap">
+            <svg width="130" height="130" viewBox="0 0 130 130">
+              <circle cx="65" cy="65" r="52" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="12"/>
+              <circle cx="65" cy="65" r="52" fill="none" stroke="url(#donutGrad)"
+                stroke-width="12" stroke-linecap="round"
+                stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                transform="rotate(-90 65 65)"
+                class="donut-fill"/>
+              <defs>
+                <linearGradient id="donutGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#7B6EFF"/>
+                  <stop offset="100%" stop-color="#A89DFF"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="donut-label">
+              <div class="donut-big">88%</div>
+              <div class="donut-sub">of top brands have<br>no sonic identity</div>
+              <div style="margin-top:10px;font-size:.8rem;color:rgba(255,255,255,.6)">These brands need audio<br>created, not just tested.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ibox rv" style="transition-delay:.35s">
+        <div class="ibox-ey">What this means</div>
+        <div class="ibox-t">Audio creation with AI doesn't just expand Aybee's creative side, it <strong>unlocks the 88% of brands</strong> that currently have zero audio strategy. That's a market nobody is serving.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 5. THE IDEA WORKFLOW ═══ -->
+  <section class="sec" id="s4">
+    <div class="inner wide">
+      <p class="eyebrow rv">How it works</p>
+      <h2 class="h2 rv" style="transition-delay:.06s">Two paths.<br><em>One platform.</em></h2>
+
+      <p class="body rv" style="transition-delay:.12s;font-size:.78rem;color:rgba(255,255,255,.4);margin-bottom:8px;letter-spacing:.12em;text-transform:uppercase;font-weight:600">
+        Path A · Brand has audio
+      </p>
+      <div class="wf">
+        <div class="wf-nd">
+          <div class="wf-b rv"><div class="wf-ic">📤</div><div class="wf-lb">Upload ad<br>with audio</div></div><div class="wf-ar"></div>
+        </div>
+        <div class="wf-nd">
+          <div class="wf-b hi rv" style="transition-delay:.08s"><div class="wf-ic">🔀</div><div class="wf-lb">Same video,<br>two soundtracks</div></div><div class="wf-ar"></div>
+        </div>
+        <div class="wf-nd">
+          <div class="wf-b rv" style="transition-delay:.16s"><div class="wf-ic">👥</div><div class="wf-lb">Panel watches<br>both versions</div></div><div class="wf-ar"></div>
+        </div>
+        <div class="wf-nd">
+          <div class="wf-b hi rv" style="transition-delay:.24s"><div class="wf-ic">📊</div><div class="wf-lb">Behaviour data<br>picks the winner</div></div>
+        </div>
+      </div>
+
+      <p class="body rv" style="transition-delay:.12s;font-size:.78rem;color:var(--ac2);margin-bottom:8px;margin-top:2.5rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600">
+        Path B · Brand needs audio
+      </p>
+      <div class="wf">
+        <div class="wf-nd">
+          <div class="wf-b hi rv"><div class="wf-ic">🧠</div><div class="wf-lb">Input product<br>& buyer emotion</div></div><div class="wf-ar"></div>
+        </div>
+        <div class="wf-nd">
+          <div class="wf-b hi rv" style="transition-delay:.08s"><div class="wf-ic">🤖</div><div class="wf-lb">AI generates<br>audio variants</div></div><div class="wf-ar"></div>
+        </div>
+        <div class="wf-nd">
+          <div class="wf-b rv" style="transition-delay:.16s"><div class="wf-ic">👥</div><div class="wf-lb">Panel tests<br>with real buyers</div></div><div class="wf-ar"></div>
+        </div>
+        <div class="wf-nd">
+          <div class="wf-b hi rv" style="transition-delay:.24s"><div class="wf-ic">✅</div><div class="wf-lb">Launch with<br>proven audio</div></div>
+        </div>
+      </div>
+
+      <div class="patent-badge rv" style="transition-delay:.36s">
+        🔒 Path B's moat: every test compounds a behavioural dataset rivals can't easily copy — plus first-mover advantage in an untested category
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 6. TITAN CASE STUDY ═══ -->
+  <section class="sec" id="s5">
+    <div class="inner wide">
+      <div class="titan-top">
+        <div class="titan-copy">
+          <p class="eyebrow rv">Proof it matters</p>
+          <h2 class="h2 rv" style="transition-delay:.06s">Titan picked Mozart.<br><em>It was a lucky guess.</em></h2>
+          <p class="body rv" style="transition-delay:.12s">
+            India's biggest watch brand chose Mozart's Symphony No. 25 on instinct. It became one of the most iconic brand sounds in the country. But they had no data, they got lucky. Most brands don't.
+          </p>
+        </div>
+        <div class="titan-media rvs" style="transition-delay:.18s">
+          <div class="carousel" id="titanCarousel">
+            <div class="carousel-track">
+              <div class="carousel-slide">
+                <iframe id="yt0" src="https://www.youtube.com/embed/PQxFL6Ce-XM?rel=0&enablejsapi=1" title="Titan audio identity 1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+              </div>
+              <div class="carousel-slide">
+                <iframe id="yt1" src="https://www.youtube.com/embed/tp3_phKmzls?rel=0&enablejsapi=1" title="Titan audio identity 2" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+              </div>
+            </div>
+            <button class="carousel-btn prev" aria-label="Previous video">‹</button>
+            <button class="carousel-btn next" aria-label="Next video">›</button>
+            <div class="carousel-dots">
+              <button class="carousel-dot active" data-i="0" aria-label="Video 1"></button>
+              <button class="carousel-dot" data-i="1" aria-label="Video 2"></button>
+            </div>
+          </div>
+          <p class="titan-cap">▶ Titan's iconic Mozart sound — swipe through both films</p>
+        </div>
+      </div>
+
+      <div class="case-grid rv" style="transition-delay:.22s">
+        <div class="case-stat">
+          <div class="case-num">#1</div>
+          <div class="case-lbl">Most recognised brand<br>sound in India</div>
+        </div>
+        <div class="case-stat">
+          <div class="case-num">25+</div>
+          <div class="case-lbl">Years of the same audio<br>identity: untested, iconic</div>
+        </div>
+        <div class="case-quote">
+          <div class="case-qt">"We chose Mozart because it felt right. We had no idea it would become this iconic."</div>
+          <div class="case-src">- Titan brand team</div>
+        </div>
+      </div>
+
+      <div class="ibox rv" style="transition-delay:.34s">
+        <div class="ibox-ey">The Aybee angle</div>
+        <div class="ibox-t">Titan got lucky. With Aybee brands don't need luck, they get <strong>AI-generated options tested against real behaviour</strong>. Create it, test it, launch what works.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 7. CLOSING ═══ -->
+  <section class="sec" id="s6" style="min-height:70svh">
+    <div class="inner ctr">
+      <p class="fq rv" style="transition-delay:.08s">
+        The brands that <em>sound right</em><br>are the ones people <em>remember.</em>
+      </p>
+      <p style="font-size:.94rem;color:rgba(255,255,255,.4);max-width:440px;margin:0 auto 2rem;line-height:1.7" class="rv" style="transition-delay:.16s">
+        Aybee already helps brands look right, price right & convert better. Audio is the missing sense & now it's within reach.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   THREE.JS — GALAXY (realistic · futuristic · audio-reactive)
+═══════════════════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('space-canvas');
+  const W = ()=> window.innerWidth, H = ()=> window.innerHeight;
+
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(W(),H());
+  renderer.setClearColor(0x05060b,1);
+
+  const PIX = Math.min(devicePixelRatio,2);
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x05060b, 0.05);
+  const camera = new THREE.PerspectiveCamera(60, W()/H(), 0.1, 1000);
+  camera.position.set(0, 1.1, 9);
+
+  /* ---------- Spiral galaxy ---------- */
+  const COUNT=20000, RADIUS=6.5, BRANCHES=4, SPIN=0.9, RND=0.34, POW=2.6;
+  const inside=new THREE.Color(0xe9e2ff), mid=new THREE.Color(0x7B6EFF), outside=new THREE.Color(0x1b2a6b);
+  const gGeo=new THREE.BufferGeometry();
+  const gP=new Float32Array(COUNT*3), gC=new Float32Array(COUNT*3), gS=new Float32Array(COUNT);
+  for(let i=0;i<COUNT;i++){
+    const i3=i*3;
+    const r=Math.pow(Math.random(),0.7)*RADIUS;
+    const branch=((i%BRANCHES)/BRANCHES)*Math.PI*2;
+    const spin=r*SPIN;
+    const rnd=()=>Math.pow(Math.random(),POW)*(Math.random()<.5?1:-1);
+    gP[i3]   = Math.cos(branch+spin)*r + rnd()*RND*r;
+    gP[i3+1] = rnd()*RND*r*0.42;
+    gP[i3+2] = Math.sin(branch+spin)*r + rnd()*RND*r;
+    const col=inside.clone(); const t=r/RADIUS;
+    col.lerp(mid, Math.min(t*1.5,1)); col.lerp(outside, Math.pow(t,1.7));
+    gC[i3]=col.r; gC[i3+1]=col.g; gC[i3+2]=col.b;
+    gS[i]=(r<0.55?2.4:1.0)*(Math.random()*0.7+0.5);
+  }
+  gGeo.setAttribute('position', new THREE.BufferAttribute(gP,3));
+  gGeo.setAttribute('aColor',   new THREE.BufferAttribute(gC,3));
+  gGeo.setAttribute('aScale',   new THREE.BufferAttribute(gS,1));
+
+  const gMat=new THREE.ShaderMaterial({
+    transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+    uniforms:{ uSize:{value:24.0}, uPix:{value:PIX}, uAudio:{value:0} },
+    vertexShader:`
+      uniform float uSize; uniform float uPix; uniform float uAudio;
+      attribute float aScale; attribute vec3 aColor; varying vec3 vC;
+      void main(){
+        vC=aColor;
+        vec4 mv=modelViewMatrix*vec4(position,1.0);
+        gl_PointSize=uSize*aScale*uPix*(1.0+uAudio*0.8)*(1.0/-mv.z);
+        gl_Position=projectionMatrix*mv;
+      }`,
+    fragmentShader:`
+      varying vec3 vC;
+      void main(){
+        float d=distance(gl_PointCoord,vec2(0.5));
+        float s=1.0-smoothstep(0.0,0.5,d); s=pow(s,1.6);
+        gl_FragColor=vec4(vC,s);
+      }`
+  });
+  const galaxy=new THREE.Points(gGeo,gMat);
+  const gGroup=new THREE.Group(); gGroup.add(galaxy);
+
+  /* Core glow sprite */
+  function glowTex(){
+    const c=document.createElement('canvas'); c.width=c.height=128;
+    const x=c.getContext('2d');
+    const g=x.createRadialGradient(64,64,0,64,64,64);
+    g.addColorStop(0,'rgba(236,230,255,0.95)');
+    g.addColorStop(.25,'rgba(150,135,255,0.55)');
+    g.addColorStop(.6,'rgba(90,78,200,0.16)');
+    g.addColorStop(1,'rgba(90,78,200,0)');
+    x.fillStyle=g; x.fillRect(0,0,128,128);
+    return new THREE.CanvasTexture(c);
+  }
+  const core=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,opacity:.9}));
+  core.scale.set(4.5,4.5,1); gGroup.add(core);
+
+  gGroup.rotation.x=-1.02; gGroup.rotation.z=0.16;
+  scene.add(gGroup);
+
+  /* ---------- Bright starfield ---------- */
+  const SC=1600;
+  const sGeo=new THREE.BufferGeometry();
+  const sP=new Float32Array(SC*3), sS=new Float32Array(SC);
+  for(let i=0;i<SC;i++){
+    sP[i*3]=(Math.random()-.5)*100; sP[i*3+1]=(Math.random()-.5)*100; sP[i*3+2]=(Math.random()-.5)*100-20;
+    sS[i]=Math.random()*1.4+.4;
+  }
+  sGeo.setAttribute('position', new THREE.BufferAttribute(sP,3));
+  sGeo.setAttribute('aScale',   new THREE.BufferAttribute(sS,1));
+  const sMat=new THREE.ShaderMaterial({
+    transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+    uniforms:{ uSize:{value:13.0}, uPix:{value:PIX}, uTime:{value:0} },
+    vertexShader:`
+      uniform float uSize; uniform float uPix; uniform float uTime;
+      attribute float aScale; varying float vT;
+      void main(){
+        vT=0.55+0.45*sin(uTime*1.6+position.x*8.0+position.y*4.0);
+        vec4 mv=modelViewMatrix*vec4(position,1.0);
+        gl_PointSize=uSize*aScale*uPix*(1.0/-mv.z);
+        gl_Position=projectionMatrix*mv;
+      }`,
+    fragmentShader:`
+      varying float vT;
+      void main(){
+        float d=distance(gl_PointCoord,vec2(0.5));
+        float s=1.0-smoothstep(0.0,0.5,d);
+        gl_FragColor=vec4(vec3(0.82,0.84,0.96), s*vT);
+      }`
+  });
+  const stars=new THREE.Points(sGeo,sMat); scene.add(stars);
+
+  /* ---------- Interaction ---------- */
+  const m={x:0,y:0,sx:0,sy:0};
+  window.addEventListener('mousemove', e=>{ m.x=(e.clientX/W()-.5)*2; m.y=(e.clientY/H()-.5)*-2; });
+  const lv=(a,b,t)=>a+(b-a)*t;
+  const targetX=()=> W()>820 ? 3.0 : 0.4;
+
+  let gz=0, gsc=1, sz=0;
+  const clock=new THREE.Clock();
+  (function tick(){
+    requestAnimationFrame(tick);
+    const t=clock.getElapsedTime();
+    const audio=window.__audioLevel||0;
+    const sp=window.__scroll01||0;          /* 0 at top → 1 at bottom */
+    m.sx=lv(m.sx,m.x,.04); m.sy=lv(m.sy,m.y,.04);
+
+    galaxy.rotation.y=t*0.05 + sp*0.5;
+    gMat.uniforms.uAudio.value=audio;
+    gGroup.position.x=lv(gGroup.position.x, targetX(), .05);
+    gGroup.position.y=0.35+Math.sin(t*0.3)*0.12 + sp*1.4;
+
+    /* recede into deep space while scrolling */
+    gz=lv(gz, -sp*11, .06);  gGroup.position.z=gz;
+    gsc=lv(gsc, 1-sp*0.45, .06); gGroup.scale.set(gsc,gsc,gsc);
+
+    const cs=4.5+audio*2.4; core.scale.set(cs,cs,1);
+    core.material.opacity=(0.85+audio*0.4)*(1-sp*0.55);
+
+    stars.rotation.y=t*0.012;
+    sz=lv(sz, sp*7, .06); stars.position.z=sz; /* stars drift forward → depth */
+    sMat.uniforms.uTime.value=t;
+
+    camera.position.x=lv(camera.position.x, m.sx*0.55, .04);
+    camera.position.y=lv(camera.position.y, 1.1+m.sy*0.4, .04);
+    camera.lookAt(gGroup.position.x*0.5, 0.2, 0);
+
+    renderer.render(scene,camera);
+  })();
+
+  window.addEventListener('resize',()=>{
+    camera.aspect=W()/H(); camera.updateProjectionMatrix(); renderer.setSize(W(),H());
+  });
+})();
+
+/* ═══════════════════════════════════════════════════
+   SCROLL DRIVER
+═══════════════════════════════════════════════════ */
+(function(){
+  const SECTIONS = ['s0','s1','s2','s3','s4','s5','s6'];
+
+  /* Reveal */
+  const allReveal = document.querySelectorAll('.rv,.rvl,.rvr,.rvs');
+  const revealObs = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){e.target.classList.add('in');revealObs.unobserve(e.target)}
+    });
+  },{threshold:.12});
+  allReveal.forEach(el=>revealObs.observe(el));
+
+  /* Stacked bars animation */
+  const stackedCharts = document.querySelectorAll('[data-stacked-chart]');
+  const stackedObs = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      stackedObs.unobserve(e.target);
+      e.target.querySelectorAll('.sb-seg[data-width]').forEach(seg=>{
+        seg.style.width = seg.dataset.width + '%';
+      });
+    });
+  },{threshold:.3});
+  stackedCharts.forEach(c=>stackedObs.observe(c));
+
+  /* Donut animation */
+  const donutCharts = document.querySelectorAll('[data-donut-chart]');
+  const donutObs = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      donutObs.unobserve(e.target);
+      const fill = e.target.querySelector('.donut-fill');
+      if(fill){
+        const circumference = 2 * Math.PI * 52;
+        const target = circumference * (1 - 0.88);
+        fill.style.transition = 'stroke-dashoffset 1.5s cubic-bezier(.34,1.2,.64,1)';
+        fill.style.strokeDashoffset = target;
+      }
+    });
+  },{threshold:.3});
+  donutCharts.forEach(c=>donutObs.observe(c));
+
+  /* Progress bar */
+  function onScroll(){
+    const vh = window.innerHeight;
+    const tot = document.body.scrollHeight - vh;
+    const p = tot>0 ? window.scrollY/tot : 0;
+    window.__scroll01 = Math.max(0, Math.min(1, p));   /* drives galaxy depth */
+    document.getElementById('pgbar').style.width = (p*100)+'%';
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  /* Rail fade in */
+  setTimeout(()=>document.getElementById('rail').classList.add('show'),900);
+})();
+
+/* ═══════════════════════════════════════════════════
+   AUDIO — background score + analyser (drives galaxy)
+═══════════════════════════════════════════════════ */
+(function(){
+  const audio=document.getElementById('bgm');
+  const btn=document.getElementById('sound-toggle');
+  const label=btn.querySelector('.sound-label');
+  if(!audio||!btn) return;
+  audio.volume=0.55;
+  let ctx,analyser,data,started=false,playing=false;
+  window.__audioLevel=0;
+
+  function graph(){
+    if(ctx) return;
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    ctx=new AC();
+    const src=ctx.createMediaElementSource(audio);
+    analyser=ctx.createAnalyser(); analyser.fftSize=256;
+    data=new Uint8Array(analyser.frequencyBinCount);
+    src.connect(analyser); analyser.connect(ctx.destination);
+    (function loop(){
+      requestAnimationFrame(loop);
+      if(!analyser) return;
+      analyser.getByteFrequencyData(data);
+      let sum=0; for(let i=0;i<data.length;i++) sum+=data[i];
+      const avg=sum/data.length/255;
+      window.__audioLevel+=(avg-window.__audioLevel)*0.15;
+    })();
+  }
+  function update(){ label.textContent=playing?'Sound on':'Sound off'; btn.classList.toggle('playing',playing); }
+  async function play(){
+    graph();
+    if(ctx&&ctx.state==='suspended'){ try{ await ctx.resume(); }catch(e){} }
+    try{ await audio.play(); playing=true; }catch(e){ playing=false; }
+    update();
+  }
+  function pause(){ audio.pause(); playing=false; update(); }
+
+  btn.addEventListener('click', ()=> playing?pause():play());
+  /* prevent the global "first gesture" from double-firing on the button */
+  ['pointerdown','touchstart'].forEach(ev=> btn.addEventListener(ev, e=> e.stopPropagation()));
+
+  function first(){
+    if(started) return; started=true; play();
+    ['pointerdown','keydown','touchstart','scroll'].forEach(ev=> window.removeEventListener(ev, first));
+  }
+  ['pointerdown','keydown','touchstart'].forEach(ev=> window.addEventListener(ev, first, {once:false}));
+  window.addEventListener('scroll', first, {passive:true});
+
+  /* exposed so the video carousel can duck the music */
+  window.__bgm={ play:play, pause:pause, isPlaying:()=>playing };
+})();
+
+/* ═══════════════════════════════════════════════════
+   TITAN VIDEO CAROUSEL  (+ YouTube API: ducks the music)
+═══════════════════════════════════════════════════ */
+(function(){
+  const car=document.getElementById('titanCarousel');
+  if(!car) return;
+  const track=car.querySelector('.carousel-track');
+  const slides=car.querySelectorAll('.carousel-slide');
+  const dots=car.querySelectorAll('.carousel-dot');
+  let i=0, players=[], wasPlaying=false, videoOn=false;
+
+  function go(n){
+    i=(n+slides.length)%slides.length;
+    track.style.transform='translateX('+(-i*100)+'%)';
+    dots.forEach((d,k)=>d.classList.toggle('active',k===i));
+    /* pause whichever video we just scrolled away from */
+    players.forEach((p,k)=>{ if(k!==i && p && p.pauseVideo){ try{p.pauseVideo();}catch(e){} } });
+  }
+  car.querySelector('.next').addEventListener('click',()=>go(i+1));
+  car.querySelector('.prev').addEventListener('click',()=>go(i-1));
+  dots.forEach(d=>d.addEventListener('click',()=>go(+d.dataset.i)));
+
+  function anyPlaying(){ return players.some(p=> p && p.getPlayerState && p.getPlayerState()===1); }
+
+  function onState(e){
+    if(e.data===1){                                    /* PLAYING → mute site music */
+      if(!videoOn){ videoOn=true; wasPlaying = !!(window.__bgm && window.__bgm.isPlaying()); }
+      if(window.__bgm) window.__bgm.pause();
+    } else if(e.data===2 || e.data===0){               /* PAUSED / ENDED */
+      setTimeout(()=>{
+        if(!anyPlaying()){ videoOn=false; if(wasPlaying && window.__bgm) window.__bgm.play(); }
+      },250);
+    }
+  }
+
+  /* load the YouTube IFrame API and attach to both players */
+  window.onYouTubeIframeAPIReady=function(){
+    ['yt0','yt1'].forEach((id,k)=>{
+      players[k]=new YT.Player(id,{events:{onStateChange:onState}});
+    });
+  };
+  const tag=document.createElement('script');
+  tag.src='https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+</script>
+
+</body>
+</html>
